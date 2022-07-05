@@ -1,0 +1,9 @@
+{
+  "catalogs": {},
+  "aliases": {
+    "jira": {
+      "script-ref": "jira.java"
+    }
+  },
+  "templates": {}
+}
