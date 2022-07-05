@@ -8,10 +8,12 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.PropertiesDefaultProvider;
 import picocli.CommandLine.Spec;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -21,6 +23,7 @@ import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
+import static java.awt.Desktop.Action.BROWSE;
 import static java.lang.System.out;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.URLEncoder.encode;
@@ -31,14 +34,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
         version = "jira 0.1",
         description = "jira made with jbang",
         defaultValueProvider = PropertiesDefaultProvider.class,
-        subcommands = jira.Unresolved.class,
+        subcommands = {jira.Unresolved.class, jira.Browse.class},
         header = {
+                "",
                 "     __.__               ",
                 "    |__|__|___________   ",
                 "    |  |  \\_  __ \\__  \\  ",
                 "    |  |  ||  | \\// __ \\_",
                 "/\\__|  |__||__|  (____  /",
-                "\\______|              \\/ "
+                "\\______|              \\/ ",
+                ""
         })
 class jira {
 
@@ -77,8 +82,7 @@ class jira {
         return host;
     }
 
-    @Command(name = "unresolved",
-            mixinStandardHelpOptions = true)
+    @Command(name = "unresolved", mixinStandardHelpOptions = true)
     static class Unresolved implements Callable<Integer> {
 
         @ParentCommand
@@ -113,6 +117,38 @@ class jira {
             out.println("--- ----------------------------------------------------------------------------");
             out.println("[" + key + "]: " + summary);
             out.println("browse: https://" + parent.getHost() + "/browse/" + key);
+        }
+    }
+
+    @Command(name = "browse", mixinStandardHelpOptions = true,
+            defaultValueProvider = PropertiesDefaultProvider.class)
+    static class Browse implements Callable<Integer> {
+
+        @ParentCommand
+        private jira parent;
+
+        @Parameters(description = "The jira issue key",
+                arity = "1",
+                paramLabel = "JIRA_ISSUE_KEY")
+        private String key;
+
+        @Option(names = "--project",
+                required = true,
+                paramLabel = "JIRA_PROJECT",
+                defaultValue = "${JIRA_PROJECT}",
+                description = "The jira project. Defaults to `project` property on '${sys:user.home}${sys:file.separator}.jira.properties'")
+        private String project;
+
+        @Override
+        public Integer call() throws Exception {
+            parent.printHeader();
+            String issueBrowseUrl = "https://" + parent.getHost() + "/browse/" + project + "-" + key;
+            out.println("opening: " + issueBrowseUrl);
+
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(BROWSE)) {
+                Desktop.getDesktop().browse(new URI(issueBrowseUrl));
+            }
+            return 0;
         }
     }
 }
