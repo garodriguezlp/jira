@@ -115,7 +115,7 @@ class jira {
             String key = issue.at(("/key")).asText();
             String summary = issue.at("/fields/summary").asText();
             out.println("--- ----------------------------------------------------------------------------");
-            out.println("[" + key + "]: " + summary);
+            out.println(key + ": " + summary);
             out.println("browse: https://" + parent.getHost() + "/browse/" + key);
         }
     }
